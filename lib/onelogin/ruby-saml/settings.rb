@@ -33,6 +33,7 @@ module OneLogin
       attr_accessor :security
       attr_accessor :certificate
       attr_accessor :private_key
+      attr_accessor :private_key_password
       attr_accessor :authn_context
       attr_accessor :authn_context_comparison
       attr_accessor :authn_context_decl_ref
