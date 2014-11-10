@@ -32,6 +32,8 @@ module OneLogin
         base64_request    = encode(request)
         request_params    = {"SAMLRequest" => base64_request}
 
+        Logging.debug "Base64 encoded Request: #{base64_request}"
+
         if settings.security[:authn_requests_signed] && !settings.security[:embed_sign] && settings.private_key
           params['SigAlg']    = XMLSecurity::Document::SHA1
           url_string          = "SAMLRequest=#{CGI.escape(base64_request)}"
