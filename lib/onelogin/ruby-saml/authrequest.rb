@@ -29,9 +29,17 @@ module OneLogin
         if settings.security[:authn_requests_signed] && settings.private_key && settings.certificate && settings.security[:embed_sign]
           request_doc.root.attributes["xmlns:ds"] = "http://www.w3.org/2000/09/xmldsig#"
           request_doc.root.attributes["xmlns:ec"] = "http://www.w3.org/2001/10/xml-exc-c14n#"
-          signature = request_doc.root.add_element "Signature", {
-              "xmlns" => "http://www.w3.org/2000/09/xmldsig#"
-          }
+
+          signature = REXML::Element.new("Signature")
+
+          signature.add_attribute('xmlns', '"http://www.w3.org/2000/09/xmldsig#"')
+
+          issuer_element = request_doc.elements["//saml:Issuer"]
+          request_doc.root.insert_after issuer_element, signature
+
+          #signature = request_doc.root.add_element "Signature", {
+          #    "xmlns" => "http://www.w3.org/2000/09/xmldsig#"
+          #}
           signed_info = signature.add_element "SignedInfo"
           signed_info.add_element "CanonicalizationMethod", {
               "Algorithm" => "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
