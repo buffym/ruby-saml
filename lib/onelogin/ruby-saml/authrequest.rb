@@ -32,7 +32,7 @@ module OneLogin
 
           signature = REXML::Element.new("Signature")
 
-          signature.add_attribute('xmlns', '"http://www.w3.org/2000/09/xmldsig#"')
+          signature.add_attribute('xmlns', "http://www.w3.org/2000/09/xmldsig#")
 
           issuer_element = request_doc.elements["//saml:Issuer"]
           request_doc.root.insert_after issuer_element, signature
