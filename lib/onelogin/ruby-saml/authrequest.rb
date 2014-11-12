@@ -1,4 +1,5 @@
 require "uuid"
+require "xmldsig"
 
 require "onelogin/ruby-saml/logging"
 
@@ -24,7 +25,56 @@ module OneLogin
         request_doc.context[:attribute_quote] = :quote if settings.double_quote_xml_attribute_values
 
         request = ""
-        request_doc.write(request)
+
+        if settings.security[:authn_requests_signed] && settings.private_key && settings.certificate && settings.security[:embed_sign]
+          request_doc.root.attributes["xmlns:ds"] = "http://www.w3.org/2000/09/xmldsig#"
+          request_doc.root.attributes["xmlns:ec"] = "http://www.w3.org/2001/10/xml-exc-c14n#"
+          signature = request_doc.root.add_element "Signature", {
+              "xmlns" => "http://www.w3.org/2000/09/xmldsig#"
+          }
+          signed_info = signature.add_element "SignedInfo"
+          signed_info.add_element "CanonicalizationMethod", {
+              "Algorithm" => "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+          }
+          signed_info.add_element "SignatureMethod", {
+              "Algorithm" => "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+          }
+          reference = signed_info.add_element "Reference", {
+              "URI" => ""
+          }
+          transforms = reference.add_element "Transforms"
+          transforms.add_element "Transform", {
+              "Algorithm" => "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
+          }
+          transform = transforms.add_element "Transform", {
+              "Algorithm" => "http://www.w3.org/2001/10/xml-exc-c14n#"
+          }
+          reference.add_element "DigestMethod", {
+              "Algorithm" => "http://www.w3.org/2000/09/xmldsig#sha1"
+          }
+          reference.add_element "DigestValue"
+          signature.add_element "SignatureValue"
+          key_info = signature.add_element "KeyInfo"
+          x509_data = key_info.add_element "X509Data"
+          x509_certificate = x509_data.add_element "X509Certificate"
+          certificate = OpenSSL::X509::Certificate.new(settings.certificate)
+          # Remove newlines and BEGIN & END CERTIFICATE lines
+          x509_certificate.text = certificate.to_pem.lines.map(&:chomp)[1..-2].join("")
+          unsigned_xml = ""
+          request_doc.write(unsigned_xml)
+          private_key = OpenSSL::PKey::RSA.new(settings.private_key)
+          unsigned_document = Xmldsig::SignedDocument.new(unsigned_xml)
+          signed_xml = unsigned_document.sign(private_key)
+          signed_document = Xmldsig::SignedDocument.new(signed_xml)
+          # Remove all newlines, strip and join the signed XML
+          request = signed_document.document.to_s.lines.map(&:chomp).map(&:strip).join("")
+        else
+          request_doc.write(request)
+        end
+        # End XML-Signature
+
+        #
+        #request_doc.write(request)
 
         Logging.debug "Created AuthnRequest: #{request}"
 
@@ -114,11 +164,11 @@ module OneLogin
         end
 
         # embebed sign
-        if settings.security[:authn_requests_signed] && settings.private_key && settings.certificate && settings.security[:embed_sign] 
-          private_key         = settings.get_sp_key()
-          cert         = settings.get_sp_cert()
-          request_doc.sign_document(private_key, cert, settings.security[:signature_method], settings.security[:digest_method])
-        end
+        #if settings.security[:authn_requests_signed] && settings.private_key && settings.certificate && settings.security[:embed_sign]
+        #  private_key         = settings.get_sp_key()
+        #  cert         = settings.get_sp_cert()
+        #  request_doc.sign_document(private_key, cert, settings.security[:signature_method], settings.security[:digest_method])
+        #end
 
         request_doc
       end

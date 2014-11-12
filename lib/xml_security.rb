@@ -38,6 +38,7 @@ module XMLSecurity
     C14N            = "http://www.w3.org/2001/10/xml-exc-c14n#"
     DSIG            = "http://www.w3.org/2000/09/xmldsig#"
 
+
     def canon_algorithm(element)
       algorithm = element
       if algorithm.is_a?(REXML::Element)
@@ -110,8 +111,9 @@ module XMLSecurity
       # Add Transforms
       transforms_element = reference_element.add_element("ds:Transforms")
       transforms_element.add_element("ds:Transform", {"Algorithm" => ENVELOPED_SIG})
-      transforms_element.add_element("ds:Transform", {"Algorithm" => C14N})
+      transform_element = transforms_element.add_element("ds:Transform", {"Algorithm" => C14N})
       #transforms_element.add_element("ds:InclusiveNamespaces", {"xmlns" => C14N, "PrefixList" => INC_PREFIX_LIST})
+      #transform_element.add_element("ec::InclusiveNamespaces", {"xmlns:ec" => "http://www.w3.org/2001/10/xml-exc-c14n#", "PrefixList" => INC_PREFIX_LIST})
 
       digest_method_element = reference_element.add_element("ds:DigestMethod", {"Algorithm" => digest_method})
       reference_element.add_element("ds:DigestValue").text = compute_digest(canon_doc, algorithm(digest_method_element))
