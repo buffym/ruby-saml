@@ -41,6 +41,7 @@ class Test::Unit::TestCase
     @response_document5 ||= File.read(File.join(File.dirname(__FILE__), 'responses', 'response5.xml.base64'))
   end
 
+
   def r1_response_document_6
     @response_document6 ||= File.read(File.join(File.dirname(__FILE__), 'responses', 'r1_response6.xml.base64'))
   end
@@ -54,6 +55,10 @@ class Test::Unit::TestCase
     doc.gsub!(/NotBefore=\"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z\"/, "NotBefore=\"#{(Time.now-300).getutc.strftime("%Y-%m-%dT%XZ")}\"")
     doc.gsub!(/NotOnOrAfter=\"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z\"/, "NotOnOrAfter=\"#{(Time.now+300).getutc.strftime("%Y-%m-%dT%XZ")}\"")
     Base64.encode64(doc)
+  end
+
+  def response_document_incommon
+    @response_document_incommon ||= Base64.encode64(File.read(File.join(File.dirname(__FILE__), 'responses', 'incommon_response.xml')))
   end
 
   def response_document_7
@@ -75,6 +80,19 @@ class Test::Unit::TestCase
   def r1_signature_2
     @signature2 ||= File.read(File.join(File.dirname(__FILE__), 'certificates', 'r1_certificate2_base64'))
   end
+
+  def incommon_cert
+    @incommon_cert ||= File.read(File.join(File.dirname(__FILE__), 'certificates', 'incommon_cert'))
+  end
+
+  def incommon_key
+    @incommon_key ||= File.read(File.join(File.dirname(__FILE__), 'certificates', 'incommon-saml.key'))
+  end
+
+  def incommon_public
+    @incommon_public ||= File.read(File.join(File.dirname(__FILE__), 'certificates', 'incommon-saml.crt'))
+  end
+
 
   def idp_metadata
     @idp_metadata ||= File.read(File.join(File.dirname(__FILE__), 'responses', 'idp_descriptor.xml'))

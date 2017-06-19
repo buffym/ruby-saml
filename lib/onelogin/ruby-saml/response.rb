@@ -12,8 +12,9 @@ module OneLogin
       DSIG      = "http://www.w3.org/2000/09/xmldsig#"
 
       # Encryption related
-      PLAINTEXT_ASSERTION_PATH = "/samlp:Response/Assertion"
-      ENCRYPTED_RESPONSE_PATH = "(/samlp:Response/EncryptedAssertion/)|(/samlp:Response/saml:EncryptedAssertion/)"
+      RESPONSE_PATH = "(/samlp:Response/)|(/saml2p:Response/)"
+      PLAINTEXT_ASSERTION_PATH = "(/samlp:Response/Assertion)|(/saml2p:Response/Assertion)"
+      ENCRYPTED_RESPONSE_PATH = "(/samlp:Response/EncryptedAssertion/)|(/samlp:Response/saml:EncryptedAssertion/)|(/saml2p:Response/EncryptedAssertion/)|(/saml2p:Response/saml2:EncryptedAssertion/)"
       ENCRYPTED_RESPONSE_DATA_PATH = "./xenc:EncryptedData"
       ENCRYPTION_METHOD_PATH = "./xenc:EncryptionMethod"
       ENCRYPTED_AES_KEY_PATH = "(./KeyInfo/e:EncryptedKey/e:CipherData/e:CipherValue)|(./ds:KeyInfo/xenc:EncryptedKey/xenc:CipherData/xenc:CipherValue)"
@@ -34,6 +35,7 @@ module OneLogin
 
       def initialize(response, options = {})
         @errors = []
+        @was_encrypted = false
         raise ArgumentError.new("Response cannot be nil") if response.nil?
         @options  = options
         @response = decode_raw_saml(response)
@@ -50,6 +52,10 @@ module OneLogin
 
       def errors
         @errors
+      end
+
+      def was_encrypted?
+        @was_encrypted
       end
 
       # The value of the user identifier as designated by the initialization request response
@@ -155,7 +161,8 @@ module OneLogin
             if sig_element = document.elements['/samlp:Response/ds:Signature']
               sig_element.remove #Skipping signature verification - Assertion is already signed andit will be verified.
             end
-            document.elements['/samlp:Response/'].add(decrypt_assertion_document)
+            @was_encrypted = true
+            document.elements[RESPONSE_PATH].add(decrypt_assertion_document)
             document.elements[ENCRYPTED_RESPONSE_PATH].remove
             XMLSecurity::SignedDocument.new(document.to_s)
           else
@@ -171,7 +178,7 @@ module OneLogin
         validate_response_state(soft) &&
         validate_conditions(soft)     &&
         validate_issuer(soft)         &&
-        assertion_document.validate_document(get_fingerprint, soft) &&
+        (was_encrypted? || assertion_document.validate_document(get_fingerprint, soft)) &&
         validate_success_status(soft)
       end
 
@@ -292,7 +299,7 @@ module OneLogin
         assertion_plaintext << aes_cipher.final
         # We get some problematic noise in the plaintext after decrypting.
         # This quick regexp parse will grab only the assertion and discard the noise.
-        assertion_plaintext.match(/(.*<\/(saml:|)Assertion>)/m)[0]
+        assertion_plaintext.match(/(.*<\/(saml2?:|)Assertion>)/m)[0]
       end
 
     end

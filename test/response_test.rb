@@ -159,6 +159,18 @@ class RubySamlTest < Test::Unit::TestCase
         response.settings = settings
         assert_raises(OneLogin::RubySaml::ValidationError, 'Digest mismatch'){ response.validate! }
       end
+
+      should "decrypt saml2p assertions" do
+        response = OneLogin::RubySaml::Response.new(response_document_incommon, :skip_conditions => true)
+        settings = OneLogin::RubySaml::Settings.new
+        settings.idp_cert = incommon_cert
+        settings.certificate = incommon_public
+        settings.private_key = incommon_key
+        response.settings = settings
+        response.validate!
+        assert response.is_valid?, 'Should be a valid response'
+      end
+
     end
 
     context "#name_id" do
