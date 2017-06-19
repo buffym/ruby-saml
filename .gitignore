@@ -11,3 +11,11 @@ test/Test.iml
 *.gem
 .bundle
 *.patch
+
+test/certificates/incommon_cert
+
+test/certificates/incommon-saml.crt
+
+test/certificates/incommon-saml.key
+
+test/responses/incommon_response.xml
