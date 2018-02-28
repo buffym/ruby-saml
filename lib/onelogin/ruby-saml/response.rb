@@ -62,7 +62,7 @@ module OneLogin
       def name_id
         @name_id ||= begin
           node = xpath_first_from_signed_assertion('/a:Subject/a:NameID')
-          node.nil? ? nil : node.text
+          Utils.element_text(node)
         end
       end
 
@@ -96,7 +96,7 @@ module OneLogin
             values = attr_element.elements.collect{|e|
               # SAMLCore requires that nil AttributeValues MUST contain xsi:nil XML attribute set to "true" or "1"
               # otherwise the value is to be regarded as empty.
-              ["true", "1"].include?(e.attributes['xsi:nil']) ? nil : e.text.to_s
+              ["true", "1"].include?(e.attributes['xsi:nil']) ? nil : Utils.element_text(e)
             }
 
             attributes.add(name, values)
@@ -130,7 +130,7 @@ module OneLogin
       def status_message
         @status_message ||= begin
           node = REXML::XPath.first(document, "/p:Response/p:Status/p:StatusMessage", { "p" => PROTOCOL, "a" => ASSERTION })
-          node.text if node
+          Utils.element_text(node)
         end
       end
 
@@ -151,7 +151,7 @@ module OneLogin
         @issuer ||= begin
           node = REXML::XPath.first(assertion_document, "/p:Response/a:Issuer", { "p" => PROTOCOL, "a" => ASSERTION })
           node ||= xpath_first_from_signed_assertion('/a:Issuer')
-          node.nil? ? nil : node.text
+          Utils.element_text(node)
         end
       end
 
@@ -277,7 +277,7 @@ module OneLogin
         encrypted_assertion = document.elements[ENCRYPTED_RESPONSE_PATH]
         cipher_data = encrypted_assertion.elements[ENCRYPTED_RESPONSE_DATA_PATH]
         aes_key = retrieve_symmetric_key(cipher_data)
-        encrypted_assertion = Base64.decode64(cipher_data.elements[ENCRYPTED_ASSERTION_PATH].text)
+        encrypted_assertion = Base64.decode64(Utils.element_text(cipher_data.elements[ENCRYPTED_ASSERTION_PATH]))
         alogrithm = ENCRYTPION_ALGORITHMS[cipher_data.elements[ENCRYPTION_METHOD_PATH].attributes['Algorithm']]
         assertion_plaintext = retrieve_plaintext(encrypted_assertion, aes_key, alogrithm)
         REXML::Document.new(assertion_plaintext)
@@ -286,7 +286,7 @@ module OneLogin
       def retrieve_symmetric_key(cipher_data)
         cert_rsa = OpenSSL::PKey::RSA.new(settings.private_key, settings.private_key_password)
         encrypted_aes_key_element = cipher_data.elements[ENCRYPTED_AES_KEY_PATH]
-        encrypted_aes_key = Base64.decode64(encrypted_aes_key_element.text)
+        encrypted_aes_key = Base64.decode64(Utils.element_text(encrypted_aes_key_element))
         cert_rsa.private_decrypt(encrypted_aes_key, RSA_PKCS1_OAEP_PADDING)
       end
 
