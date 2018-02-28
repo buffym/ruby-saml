@@ -29,7 +29,7 @@ module OneLogin
       def name_id
         @name_id ||= begin
           node = REXML::XPath.first(document, "/p:LogoutRequest/a:NameID", { "p" => PROTOCOL, "a" => ASSERTION })
-          Utils.element(node)
+          Utils.element_text(node)
         end
       end
 
